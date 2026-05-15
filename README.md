@@ -57,13 +57,15 @@ Open **http://localhost:3000** in your browser. No `.env.local` file is needed f
 
 ## Deploying the Backend to Railway
 
+The repo root contains `nixpacks.toml` and `railway.json`, so Railway can build and run the backend without any manual service settings — **do not set a Root Directory** in the Railway dashboard.
+
 1. Push this repository to GitHub.
 2. Go to [railway.app](https://railway.app) and create a **New Project → Deploy from GitHub repo**.
-3. Select the repository and set the **Root Directory** to `backend`.
-4. Railway auto-detects the `Procfile` and runs `gunicorn app:app`.
+3. Select the repository. Leave **Root Directory** blank (Railway will use the repo root).
+4. Railway picks up `nixpacks.toml`, installs Python 3.11, runs `pip install -r backend/requirements.txt`, and starts the server with `gunicorn --chdir backend app:app`.
 5. After deployment, copy the public URL Railway assigns (e.g. `https://basil-flora-production.up.railway.app`).
 
-> `leads.db` is written to the Railway container's filesystem. For persistent storage across redeploys, attach a Railway **Volume** mounted at `/app` and ensure `DB_FILE` points there, or migrate to a managed database (e.g. Railway PostgreSQL).
+> `leads.db` is written to the Railway container's filesystem. For persistent storage across redeploys, attach a Railway **Volume** and point it at the `backend/` working directory, or migrate to a managed database (e.g. Railway PostgreSQL).
 
 ---
 
