@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const REQUIREMENTS = ["2 BHK", "3 BHK", "Office", "Shop"];
 const EXECUTIVES = ["Executive 1", "Executive 2", "Executive 3"];
 
@@ -27,6 +29,7 @@ export default function App() {
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState(null); // { type: 'success'|'error', message }
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -38,14 +41,14 @@ export default function App() {
     setLoading(true);
     setStatus(null);
     try {
-      const res = await fetch("http://localhost:5000/api/submit", {
+      const res = await fetch(`${API_URL}/api/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
       if (data.success) {
-        setStatus({ type: "success", message: "✓ Lead submitted successfully! Data saved to Excel." });
+        setStatus({ type: "success", message: "✓ Lead submitted successfully!" });
         setForm(initialForm);
       } else {
         setStatus({ type: "error", message: data.message || "Submission failed." });
@@ -54,6 +57,25 @@ export default function App() {
       setStatus({ type: "error", message: "Could not connect to server. Ensure the backend is running on port 5000." });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/export`);
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `basil_flora_leads_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setStatus({ type: "error", message: "Could not download leads. Ensure the backend is running." });
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -274,6 +296,34 @@ export default function App() {
         }
         .submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
 
+        /* ── Export ── */
+        .export-btn {
+          width: 100%;
+          margin-top: 12px;
+          padding: 12px;
+          background: transparent;
+          color: var(--navy-mid);
+          border: 1.5px solid var(--navy-mid);
+          border-radius: 2px;
+          font-family: 'Jost', sans-serif;
+          font-size: 0.8rem;
+          font-weight: 600;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background 0.25s, color 0.25s, transform 0.15s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+        .export-btn:hover:not(:disabled) {
+          background: var(--navy-mid);
+          color: var(--gold-light);
+          transform: translateY(-1px);
+        }
+        .export-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
         /* ── Status ── */
         .status-msg {
           margin-top: 18px;
@@ -409,6 +459,19 @@ export default function App() {
               </div>
             )}
           </form>
+
+          <button type="button" className="export-btn" onClick={handleExport} disabled={exportLoading}>
+            {exportLoading ? (
+              <>
+                <span style={{ display: "inline-block", width: 16, height: 16, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                Generating…
+              </>
+            ) : (
+              <>
+                <span>↓</span> Download Leads as Excel
+              </>
+            )}
+          </button>
 
           <div className="card-footer">
             <span>Basil Flora</span>
