@@ -8,7 +8,7 @@ import re
 import io
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://real-estate-webpage-black.vercel.app", "http://localhost:3000"])
 
 DB_FILE = "leads.db"
 HEADERS = ["S.No", "Date & Time", "Client Name", "Requirement", "Budget (Lakhs)", "Mobile Number", "Sales Executive"]
